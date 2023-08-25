@@ -1,56 +1,15 @@
-#![allow(dead_code)]
+pub mod liboblivion;
 use byteorder::{LittleEndian, ReadBytesExt};
+use liboblivion::savefile::{FileHeader, SystemTime};
 use std::{
     fs::File,
-    io::{self, BufReader, Error, Read},
+    io::{self, BufReader, Read},
 };
-
-pub mod lib {
-
-    #[derive(Debug, Default)]
-    pub struct SystemTime {
-        pub year: u16,
-        pub month: u16,
-        pub day_of_week: u16,
-        pub day: u16,
-        pub hour: u16,
-        pub minute: u16,
-        pub second: u16,
-        pub millisecond: u16,
-    }
-
-    #[derive(Debug, Default)]
-    pub struct FileHeader {
-        pub file_id: String,
-        pub major_version: u8,
-        pub minor_version: u8,
-        pub system_time: SystemTime,
-    }
-
-    impl SystemTime {
-        pub fn new(fields: &[u16]) -> Self {
-            if fields.len() != 8 {
-                panic!("Provided vector is not the right size");
-            }
-
-            Self {
-                year: fields[0],
-                month: fields[1],
-                day_of_week: fields[2],
-                day: fields[3],
-                hour: fields[4],
-                minute: fields[5],
-                second: fields[6],
-                millisecond: fields[7],
-            }
-        }
-    }
-}
 
 pub const HEADER_SIZE: usize = 30;
 pub const ID_SIZE: usize = 12;
 
-fn get_header(reader: &mut dyn Read) -> lib::FileHeader {
+fn get_header(reader: &mut dyn Read) -> FileHeader {
     let mut header_buffer = [0; HEADER_SIZE];
     let _ = reader.read(&mut header_buffer);
 
@@ -68,9 +27,9 @@ fn get_header(reader: &mut dyn Read) -> lib::FileHeader {
         system_time_v.push(x);
     }
 
-    let system_time = lib::SystemTime::new(&system_time_v);
+    let system_time = SystemTime::new(&system_time_v);
 
-    lib::FileHeader {
+    FileHeader {
         file_id,
         major_version: *major_version,
         minor_version: *minor_version,
