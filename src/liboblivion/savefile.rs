@@ -18,6 +18,28 @@ pub struct FileHeader {
     pub system_time: SystemTime,
 }
 
+#[derive(Debug, Default)]
+pub struct Screenshot {
+    pub size: u32,
+    pub width: u32,
+    pub height: u32,
+    pub data: Vec<u8>,
+}
+
+#[derive(Debug, Default)]
+pub struct SaveHeader {
+    pub header_version: u32,
+    pub header_size: u32,
+    pub save_num: u32,
+    pub pc_name: String,
+    pub pc_level: u16,
+    pub pc_location: String,
+    pub game_days: f32,
+    pub game_ticks: u32,
+    pub game_time: SystemTime,
+    pub screenshot: Screenshot,
+}
+
 impl SystemTime {
     pub fn new(fields: &[u16]) -> Self {
         if fields.len() != 8 {
