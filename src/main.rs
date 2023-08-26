@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 pub mod liboblivion;
 use byteorder::{LittleEndian, ReadBytesExt};
+use image::ImageBuffer;
 use liboblivion::savefile::{FileHeader, SaveHeader, SystemTime};
 use std::{
     fs::File,
@@ -32,6 +33,20 @@ fn parse_system_time(reader: &mut dyn Read) -> io::Result<SystemTime> {
         v.push(x);
     }
     Ok(SystemTime::new(v))
+}
+
+fn parse_save_image(reader: &mut dyn Read) -> io::Result<()> {
+    let img_width = reader.read_u32::<LittleEndian>()?;
+    let img_height = reader.read_u32::<LittleEndian>()?;
+    let mut imgbuf = ImageBuffer::new(img_width, img_height);
+    for (_x, _y, pixel) in imgbuf.enumerate_pixels_mut() {
+        let r = reader.read_u8()?;
+        let g = reader.read_u8()?;
+        let b = reader.read_u8()?;
+        *pixel = image::Rgb([r, g, b]);
+    }
+    imgbuf.save("savefile.png").unwrap();
+    Ok(())
 }
 
 // TODO: Consider rewriting this to return the SystemTime
@@ -94,6 +109,9 @@ fn get_save_header(reader: &mut dyn Read) -> io::Result<SaveHeader> {
     let game_ticks = reader.read_u32::<LittleEndian>()?;
 
     let game_time = parse_system_time(reader)?;
+
+    let _img_size = reader.read_u32::<LittleEndian>()?;
+    parse_save_image(reader)?;
 
     Ok(SaveHeader {
         header_version,
