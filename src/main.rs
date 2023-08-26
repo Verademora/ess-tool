@@ -143,18 +143,26 @@ fn main() -> io::Result<()> {
 
     let _file_header = get_file_header(&mut reader_buffer)?;
     let save_header = get_save_header(&mut reader_buffer)?;
+    let plugin_list = get_plugin_list(&mut reader_buffer)?;
+    print_save_header(&save_header);
+    println!();
+    print_plugin_list(&plugin_list);
+
+    Ok(())
+}
+
+fn print_save_header(save_header: &SaveHeader) {
     println!("Character Name: {}", save_header.pc_name);
     println!("Character Level: {}", save_header.pc_level);
     println!("Character Location: {}", save_header.pc_location);
     println!("Game Days: {}", save_header.game_days);
     println!("Game Ticks: {}", save_header.game_ticks);
     println!("Game Time: {:?}", save_header.game_time);
-    let plugin_list = get_plugin_list(&mut reader_buffer)?;
-    println!();
+}
+
+fn print_plugin_list(plugin_list: &[String]) {
     println!("Plugins:");
     for plugin in plugin_list {
         println!("--> {}", plugin);
     }
-
-    Ok(())
 }
