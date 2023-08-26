@@ -127,6 +127,16 @@ fn get_save_header(reader: &mut dyn Read) -> io::Result<SaveHeader> {
     })
 }
 
+fn get_plugin_list(reader: &mut dyn Read) -> io::Result<Vec<String>> {
+    let plugin_len = reader.read_u8()?;
+    let mut plugin_list: Vec<String> = Vec::new();
+    for _ in 0..plugin_len {
+        let strlen = reader.read_u8()?.into();
+        plugin_list.push(parse_bzstring(strlen, reader)?);
+    }
+    Ok(plugin_list)
+}
+
 fn main() -> io::Result<()> {
     let file = File::open("test.ess")?;
     let mut reader_buffer = BufReader::new(file);
@@ -139,6 +149,12 @@ fn main() -> io::Result<()> {
     println!("Game Days: {}", save_header.game_days);
     println!("Game Ticks: {}", save_header.game_ticks);
     println!("Game Time: {:?}", save_header.game_time);
+    let plugin_list = get_plugin_list(&mut reader_buffer)?;
+    println!();
+    println!("Plugins:");
+    for plugin in plugin_list {
+        println!("--> {}", plugin);
+    }
 
     Ok(())
 }
