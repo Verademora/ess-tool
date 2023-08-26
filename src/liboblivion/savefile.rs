@@ -41,7 +41,7 @@ pub struct SaveHeader {
 }
 
 impl SystemTime {
-    pub fn new(fields: &[u16]) -> Self {
+    pub fn new(fields: Vec<u16>) -> Self {
         if fields.len() != 8 {
             panic!("Provided vector is not the right size");
         }

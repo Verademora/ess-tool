@@ -14,7 +14,29 @@ pub const SYSTEM_TIME_SIZE: usize = mem::size_of::<SystemTime>() / 2;
 pub const MAJOR_VERSION: u8 = 0;
 pub const MINOR_VERSION: u8 = 125;
 
+fn parse_bzstring(strlen: usize, reader: &mut dyn Read) -> io::Result<String> {
+    let mut s = String::new();
+    for _ in 0..strlen {
+        let c = reader.read_u8()?;
+        if c != 0 {
+            s.push(c as char);
+        }
+    }
+    Ok(s)
+}
+
+fn parse_system_time(reader: &mut dyn Read) -> io::Result<SystemTime> {
+    let mut v: Vec<u16> = Vec::new();
+    for _ in 0..SYSTEM_TIME_SIZE {
+        let x = reader.read_u16::<LittleEndian>()?;
+        v.push(x);
+    }
+    Ok(SystemTime::new(v))
+}
+
 // TODO: Consider rewriting this to return the SystemTime
+// This function takes in a reader at the start of the Oblivion save file
+// After verifying all the header details it returns those details in a struct
 fn get_file_header(reader: &mut dyn Read) -> io::Result<FileHeader> {
     let mut id_buffer = [0; ID_SIZE];
     let _ = reader.read(&mut id_buffer);
@@ -43,8 +65,7 @@ fn get_file_header(reader: &mut dyn Read) -> io::Result<FileHeader> {
         let x = reader.read_u16::<LittleEndian>()?;
         system_time_v.push(x);
     }
-
-    let system_time = SystemTime::new(&system_time_v);
+    let system_time = SystemTime::new(system_time_v);
 
     Ok(FileHeader {
         file_id,
@@ -54,19 +75,9 @@ fn get_file_header(reader: &mut dyn Read) -> io::Result<FileHeader> {
     })
 }
 
-fn parse_bzstring(strlen: usize, reader: &mut dyn Read) -> io::Result<String> {
-    let mut s = String::new();
-    for _ in 0..strlen {
-        let c = reader.read_u8()?;
-        if c != 0 {
-            s.push(c as char);
-        } else {
-            break;
-        }
-    }
-    Ok(s)
-}
-
+// This function takes in a reader whose cursor is at the start
+// of the save header
+// Function pulls and parses the data and returns a struct
 fn get_save_header(reader: &mut dyn Read) -> io::Result<SaveHeader> {
     let header_version = reader.read_u32::<LittleEndian>()?;
     let header_size = reader.read_u32::<LittleEndian>()?;
@@ -82,6 +93,8 @@ fn get_save_header(reader: &mut dyn Read) -> io::Result<SaveHeader> {
     let game_days = reader.read_f32::<LittleEndian>()?;
     let game_ticks = reader.read_u32::<LittleEndian>()?;
 
+    let game_time = parse_system_time(reader)?;
+
     Ok(SaveHeader {
         header_version,
         header_size,
@@ -91,6 +104,7 @@ fn get_save_header(reader: &mut dyn Read) -> io::Result<SaveHeader> {
         pc_location,
         game_days,
         game_ticks,
+        game_time,
         ..SaveHeader::default()
     })
 }
@@ -106,6 +120,7 @@ fn main() -> io::Result<()> {
     println!("Character Location: {}", save_header.pc_location);
     println!("Game Days: {}", save_header.game_days);
     println!("Game Ticks: {}", save_header.game_ticks);
+    println!("Game Time: {:?}", save_header.game_time);
 
     Ok(())
 }
